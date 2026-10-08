@@ -1,0 +1,242 @@
+# Modelo do ClusterServiceVersion. O build.sh preenche os campos __ASSIM__ e grava em
+# bundle/manifests/autoscaling-insights.clusterserviceversion.yaml.
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: autoscaling-insights.v__VERSION__
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "insights.autoscaling.local/v1alpha1",
+          "kind": "InsightsDashboard",
+          "metadata": { "name": "autoscaling-insights" },
+          "spec": {
+            "title": "Autoscaling Insights",
+            "excludeNamespaces": "^(openshift.*|kube-.*|default)$",
+            "historyDays": 14
+          }
+        }
+      ]
+    operatorframework.io/initialization-resource: |-
+      {
+        "apiVersion": "insights.autoscaling.local/v1alpha1",
+        "kind": "InsightsDashboard",
+        "metadata": { "name": "autoscaling-insights", "namespace": "autoscaling-insights" },
+        "spec": { "title": "Autoscaling Insights" }
+      }
+    operatorframework.io/suggested-namespace: autoscaling-insights
+    capabilities: Basic Install
+    categories: Monitoring
+    containerImage: __OPERATOR_IMAGE__
+    createdAt: "__CREATED_AT__"
+    description: Painel de VPA e HPA com login pela conta do cluster. Ferramenta não oficial, sem suporte da Red Hat.
+    support: Sem suporte comercial (ferramenta não oficial)
+    features.operators.openshift.io/disconnected: "false"
+    features.operators.openshift.io/fips-compliant: "false"
+    features.operators.openshift.io/proxy-aware: "false"
+    features.operators.openshift.io/tls-profiles: "false"
+    features.operators.openshift.io/token-auth-aws: "false"
+    features.operators.openshift.io/token-auth-azure: "false"
+    features.operators.openshift.io/token-auth-gcp: "false"
+spec:
+  displayName: Autoscaling Insights
+  version: __VERSION__
+__REPLACES__
+  maturity: alpha
+  minKubeVersion: 1.27.0
+  provider:
+    name: __PROVIDER__
+  keywords: ["vpa", "hpa", "autoscaling", "vertical pod autoscaler", "horizontal pod autoscaler", "dashboard"]
+  icon:
+    - base64data: __ICON_B64__
+      mediatype: image/svg+xml
+  description: |
+    O **Autoscaling Insights** é um painel web para acompanhar o **Vertical Pod Autoscaler (VPA)** e o
+    **Horizontal Pod Autoscaler (HPA)** em todos os namespaces do cluster.
+
+    ### O que o painel mostra
+    - **VPA:** uso de CPU e memória, request atual e recomendação de cada deployment, com percentis,
+      histórico da recomendação e comandos prontos para aplicar.
+    - **HPA:** réplicas, utilização × alvo, eventos de escalonamento e como a recomendação do VPA mudaria
+      o número de réplicas. Aponta conflitos entre VPA e HPA no mesmo deployment.
+    - **Recursos:** pods, nós (se a recomendação cabe em cada um) e volumes.
+
+    ### Como usar
+    1. Instale o operator.
+    2. Crie um recurso **InsightsDashboard** (um por cluster), de preferência no namespace `autoscaling-insights`.
+    3. Abra a rota `autoscaling-insights` desse namespace e entre com a sua conta do OpenShift.
+
+    O acesso é liberado para quem pode listar pods no cluster inteiro (por exemplo, `cluster-reader`).
+
+    ### Pré-requisitos
+    - Operator **VerticalPodAutoscaler** instalado, para as páginas de VPA.
+    - Monitoramento padrão do OpenShift.
+
+    ### Importante
+    Esta aplicação **não é um produto oficial da Red Hat** e **não tem suporte da Red Hat**. É fornecida no
+    estado em que se encontra, sem garantias. A Red Hat, a empresa que a disponibilizou e os consultores
+    envolvidos não se responsabilizam pelo seu funcionamento, suportabilidade ou pelos efeitos do seu uso.
+    Não abra chamados sobre ela no Red Hat Customer Portal.
+  installModes:
+    - type: OwnNamespace
+      supported: false
+    - type: SingleNamespace
+      supported: false
+    - type: MultiNamespace
+      supported: false
+    - type: AllNamespaces
+      supported: true
+  customresourcedefinitions:
+    owned:
+      - name: insightsdashboards.insights.autoscaling.local
+        version: v1alpha1
+        kind: InsightsDashboard
+        displayName: Insights Dashboard
+        description: Instância do painel Autoscaling Insights. Crie apenas uma por cluster.
+        resources:
+          - { kind: Deployment, version: v1, name: "" }
+          - { kind: Service, version: v1, name: "" }
+          - { kind: Route, version: v1, name: "" }
+          - { kind: PersistentVolumeClaim, version: v1, name: "" }
+        specDescriptors:
+          - path: title
+            displayName: Título
+            description: Nome exibido no topo e na tela de login.
+            x-descriptors: ["urn:alm:descriptor:com.tectonic.ui:text"]
+          - path: excludeNamespaces
+            displayName: Namespaces escondidos
+            description: Expressão regular. Use ^$ para mostrar todos.
+            x-descriptors: ["urn:alm:descriptor:com.tectonic.ui:text"]
+          - path: historyDays
+            displayName: Dias de histórico do VPA
+            x-descriptors: ["urn:alm:descriptor:com.tectonic.ui:number"]
+          - path: logoConfigMap
+            displayName: ConfigMap do logo
+            description: ConfigMap no mesmo namespace com logo.png, logo.svg ou logo.jpg.
+            x-descriptors: ["urn:alm:descriptor:io.kubernetes:ConfigMap"]
+          - path: route.host
+            displayName: Endereço da rota
+            description: Vazio deixa o OpenShift gerar.
+            x-descriptors: ["urn:alm:descriptor:com.tectonic.ui:text", "urn:alm:descriptor:com.tectonic.ui:advanced"]
+          - path: storage.size
+            displayName: Tamanho do volume do histórico
+            x-descriptors: ["urn:alm:descriptor:com.tectonic.ui:text", "urn:alm:descriptor:com.tectonic.ui:advanced"]
+          - path: storage.storageClassName
+            displayName: Storage class
+            x-descriptors: ["urn:alm:descriptor:io.kubernetes:StorageClass", "urn:alm:descriptor:com.tectonic.ui:advanced"]
+          - path: consoleLink.enabled
+            displayName: Atalho no menu do console
+            description: Mostra o painel no menu de aplicações (ícone de grade no topo do console).
+            x-descriptors: ["urn:alm:descriptor:com.tectonic.ui:booleanSwitch"]
+          - path: consoleLink.section
+            displayName: Grupo do atalho no menu
+            x-descriptors: ["urn:alm:descriptor:com.tectonic.ui:text", "urn:alm:descriptor:com.tectonic.ui:advanced"]
+        statusDescriptors:
+          - path: conditions
+            displayName: Condições
+            x-descriptors: ["urn:alm:descriptor:io.kubernetes.conditions"]
+  relatedImages:
+    - name: dashboard
+      image: __DASHBOARD_IMAGE__
+    - name: oauth-proxy
+      image: registry.redhat.io/openshift4/ose-oauth-proxy-rhel9:v4.16
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+        - serviceAccountName: autoscaling-insights-operator
+          rules:
+            # o próprio recurso
+            - apiGroups: ["insights.autoscaling.local"]
+              resources: ["insightsdashboards", "insightsdashboards/status", "insightsdashboards/finalizers"]
+              verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+            # objetos que o chart cria (e o Helm guarda o estado em Secrets do namespace do recurso)
+            - apiGroups: [""]
+              resources: ["secrets", "serviceaccounts", "services", "configmaps", "persistentvolumeclaims"]
+              verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+            - apiGroups: ["apps"]
+              resources: ["deployments"]
+              verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+            - apiGroups: ["route.openshift.io"]
+              resources: ["routes", "routes/custom-host"]
+              verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+            # permissões de cluster do painel (somente leitura) e os vínculos com papéis existentes
+            - apiGroups: ["rbac.authorization.k8s.io"]
+              resources: ["clusterroles", "clusterrolebindings"]
+              verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+            - apiGroups: ["rbac.authorization.k8s.io"]
+              resources: ["clusterroles"]
+              verbs: ["bind", "escalate"]
+              resourceNames: ["autoscaling-insights-reader", "autoscaling-insights-consolelink", "cluster-monitoring-view", "system:auth-delegator"]
+            # leitura que o painel recebe (o operator precisa ter para poder conceder)
+            - apiGroups: [""]
+              resources: ["pods", "nodes", "events"]
+              verbs: ["get", "list", "watch"]
+            - apiGroups: ["autoscaling.k8s.io"]
+              resources: ["verticalpodautoscalers"]
+              verbs: ["get", "list", "watch"]
+            - apiGroups: ["autoscaling"]
+              resources: ["horizontalpodautoscalers"]
+              verbs: ["get", "list", "watch"]
+            - apiGroups: [""]
+              resources: ["events"]
+              verbs: ["create", "patch"]
+            # atalho no menu de aplicações do console (o painel cria; o operator concede)
+            - apiGroups: ["console.openshift.io"]
+              resources: ["consolelinks"]
+              verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+      permissions:
+        - serviceAccountName: autoscaling-insights-operator
+          rules:
+            # eleição de líder do operator
+            - apiGroups: ["coordination.k8s.io"]
+              resources: ["leases"]
+              verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+            - apiGroups: [""]
+              resources: ["configmaps"]
+              verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+      deployments:
+        - name: autoscaling-insights-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app.kubernetes.io/name: autoscaling-insights-operator
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/name: autoscaling-insights-operator
+              spec:
+                serviceAccountName: autoscaling-insights-operator
+                securityContext:
+                  runAsNonRoot: true
+                  seccompProfile:
+                    type: RuntimeDefault
+                containers:
+                  - name: manager
+                    image: __OPERATOR_IMAGE__
+                    args:
+                      - --leader-elect
+                      - --leader-election-id=autoscaling-insights-operator
+                      - --health-probe-bind-address=:8081
+                    env:
+                      - name: WATCH_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.annotations['olm.targetNamespaces']
+                    livenessProbe:
+                      httpGet: { path: /healthz, port: 8081 }
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+                    readinessProbe:
+                      httpGet: { path: /readyz, port: 8081 }
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                    resources:
+                      requests: { cpu: 10m, memory: 128Mi }
+                      limits: { memory: 512Mi }
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      capabilities:
+                        drop: ["ALL"]

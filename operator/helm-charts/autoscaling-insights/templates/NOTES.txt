@@ -1,0 +1,3 @@
+Autoscaling Insights instalado no namespace {{ .Release.Namespace }}.
+URL: oc -n {{ .Release.Namespace }} get route autoscaling-insights -o jsonpath='https://{.spec.host}'
+Ferramenta não oficial, sem vínculo ou suporte da Red Hat.

@@ -1,0 +1,46 @@
+# Valores padrão. Cada campo pode ser sobrescrito no "spec" do recurso InsightsDashboard.
+
+# Imagem do painel (definida pelo build.sh com o seu registry e versão).
+image: __DASHBOARD_IMAGE__
+
+# Proxy de login com a conta do cluster (imagem oficial do OpenShift).
+oauthProxyImage: registry.redhat.io/openshift4/ose-oauth-proxy-rhel9:v4.16
+
+# Nome exibido no topo e na tela de login.
+title: Autoscaling Insights
+
+# Namespaces escondidos das listas (expressão regular). Use "^$" para mostrar todos.
+excludeNamespaces: "^(openshift.*|kube-.*|default)$"
+
+# Histórico das recomendações do VPA.
+historyDays: 14
+sampleIntervalSeconds: 60
+
+# Volume do histórico.
+storage:
+  size: 1Gi
+  storageClassName: ""     # vazio = storage class padrão do cluster
+
+# Rota. host vazio = gerado pelo OpenShift.
+route:
+  host: ""
+
+# ConfigMap opcional com o logo (chave logo.png, logo.svg ou logo.jpg).
+logoConfigMap: autoscaling-insights-logo
+
+# Atalho no menu de aplicações do console (ícone de grade no topo), como o do Argo CD.
+consoleLink:
+  enabled: true
+  section: Autoscaling Insights   # título do grupo no menu
+  text: ""                        # texto do item; vazio = o mesmo de "title"
+
+# Duração da sessão de login.
+sessionDuration: 8h0m0s
+
+resources:
+  dashboard:
+    requests: { cpu: 20m, memory: 96Mi }
+    limits: { memory: 384Mi }
+  oauthProxy:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 128Mi }

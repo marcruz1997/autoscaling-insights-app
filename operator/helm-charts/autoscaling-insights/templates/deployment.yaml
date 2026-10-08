@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoscaling-insights
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: autoscaling-insights
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # volume RWO: o pod antigo sai antes do novo subir
+  selector:
+    matchLabels:
+      app: autoscaling-insights
+  template:
+    metadata:
+      labels:
+        app: autoscaling-insights
+      annotations:
+        # Reinicia o pod quando a tela de login muda.
+        checksum/login: {{ printf "%s%s" (.Files.Get "files/sign_in.html") (.Files.Get "files/error.html") | sha256sum }}
+    spec:
+      serviceAccountName: autoscaling-insights
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      # Gera a chave que cifra o cookie de sessão a cada início do pod (nada fica guardado em Secret).
+      initContainers:
+        - name: session-secret
+          image: {{ .Values.image }}
+          imagePullPolicy: IfNotPresent
+          command: ["python3", "-c", "import secrets; open('/session/session_secret', 'w').write(secrets.token_hex(16))"]
+          volumeMounts:
+            - name: proxy-session
+              mountPath: /session
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { memory: 64Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      containers:
+        # ---------- login: oauth-proxy (única porta exposta) ----------
+        - name: oauth-proxy
+          image: {{ .Values.oauthProxyImage }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: https
+              containerPort: 8443
+          args:
+            - --https-address=:8443
+            - --provider=openshift
+            - --openshift-service-account=autoscaling-insights
+            - --upstream=http://127.0.0.1:8080
+            - --tls-cert=/etc/tls/private/tls.crt
+            - --tls-key=/etc/tls/private/tls.key
+            - --cookie-secret-file=/etc/proxy/secrets/session_secret
+            - --cookie-expire={{ .Values.sessionDuration }}
+            # Entram usuários que podem listar pods no cluster inteiro (cluster-admin, cluster-reader).
+            - '--openshift-sar={"resource":"pods","verb":"list"}'
+            - --custom-templates-dir=/etc/proxy/templates
+            # Liberados sem login: só CSS/JS/fontes, o logo e o nome do painel. Nenhum dado do cluster.
+            - --skip-auth-regex=^/static/
+            - --skip-auth-regex=^/logo$
+            - --skip-auth-regex=^/api/branding$
+          volumeMounts:
+            - name: proxy-tls
+              mountPath: /etc/tls/private
+              readOnly: true
+            - name: proxy-session
+              mountPath: /etc/proxy/secrets
+              readOnly: true
+            - name: login-templates
+              mountPath: /etc/proxy/templates
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /oauth/healthz
+              port: https
+              scheme: HTTPS
+          livenessProbe:
+            httpGet:
+              path: /oauth/healthz
+              port: https
+              scheme: HTTPS
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources.oauthProxy | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+        # ---------- painel: só escuta em localhost, alcançável apenas pelo proxy ----------
+        - name: dashboard
+          image: {{ .Values.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BIND
+              value: "127.0.0.1:8080"
+            - name: APP_TITLE
+              value: {{ .Values.title | quote }}
+            - name: EXCLUDE_NS_REGEX
+              value: {{ .Values.excludeNamespaces | quote }}
+            - name: DATA_DIR
+              value: /data
+            - name: HISTORY_DAYS
+              value: {{ .Values.historyDays | quote }}
+            - name: SAMPLE_INTERVAL
+              value: {{ .Values.sampleIntervalSeconds | quote }}
+            - name: CONSOLE_LINK
+              value: {{ .Values.consoleLink.enabled | quote }}
+            - name: CONSOLE_LINK_SECTION
+              value: {{ .Values.consoleLink.section | quote }}
+            - name: CONSOLE_LINK_TEXT
+              value: {{ .Values.consoleLink.text | default .Values.title | quote }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: logo
+              mountPath: /logo
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            {{- toYaml .Values.resources.dashboard | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: autoscaling-insights-data
+        - name: proxy-tls
+          secret:
+            secretName: autoscaling-insights-tls      # gerado pelo service-ca do OpenShift
+        - name: proxy-session
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        - name: login-templates
+          configMap:
+            name: autoscaling-insights-login
+        - name: logo
+          configMap:
+            name: {{ .Values.logoConfigMap }}
+            optional: true
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

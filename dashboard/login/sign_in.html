@@ -1,0 +1,70 @@
+{{define "sign_in.html"}}<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar · Autoscaling Insights</title>
+<link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+<!-- Arquivos públicos do painel (liberados no oauth-proxy por --skip-auth-regex): só CSS e fontes. -->
+<link rel="stylesheet" href="/static/vendor/patternfly/patternfly.min.css">
+<link rel="stylesheet" href="/static/login.css">
+</head>
+<body>
+<main class="login">
+  <section class="brand" aria-label="Sobre o painel">
+    <div class="brand-inner">
+      <p class="product" data-brand-title>Autoscaling Insights</p>
+      <p class="version" data-brand-version hidden></p>
+      <p class="pitch">Recomendações do VPA e escalonamento do HPA dos seus deployments, em um só lugar.</p>
+
+      <figure class="scaling" aria-hidden="true">
+        <svg viewBox="0 0 420 200" role="presentation">
+          <!-- Vertical: um pod cresce até a recomendação -->
+          <g class="vertical">
+            <line x1="20" y1="168" x2="160" y2="168" class="ground"/>
+            <!-- tracejado branco: request atual; azul: uso, que sobe até a recomendação (laranja) -->
+            <rect x="70" y="28" width="44" height="140" rx="8" class="pod-frame"/>
+            <rect x="74" y="78" width="36" height="86" rx="5" class="pod-fill grow"/>
+            <line x1="52" y1="78" x2="132" y2="78" class="target"/>
+          </g>
+          <!-- Horizontal: pods se multiplicam -->
+          <g class="horizontal">
+            <line x1="200" y1="168" x2="410" y2="168" class="ground"/>
+            <rect x="206" y="104" width="38" height="64" rx="7" class="pod-solid"/>
+            <rect x="256" y="104" width="38" height="64" rx="7" class="pod-solid"/>
+            <rect x="306" y="104" width="38" height="64" rx="7" class="pod-new n1"/>
+            <rect x="356" y="104" width="38" height="64" rx="7" class="pod-new n2"/>
+          </g>
+        </svg>
+        <figcaption>
+          <span><strong>Vertical</strong> o tamanho certo de cada pod</span>
+          <span><strong>Horizontal</strong> o número certo de pods</span>
+        </figcaption>
+      </figure>
+
+      <p class="disclaimer">Ferramenta não oficial, sem vínculo ou suporte da Red Hat.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-inner">
+      <img class="logo" src="/logo" alt="" hidden onload="this.hidden=false" onerror="this.remove()">
+      <h1>Entrar</h1>
+      <p class="lead">Use a mesma conta com que você acessa o console do OpenShift.</p>
+
+      <form method="GET" action="{{.ProxyPrefix}}/start">
+        <input type="hidden" name="rd" value="{{.Redirect}}">
+        <button type="submit" class="pf-v6-c-button pf-m-primary pf-m-block signin">
+          <span class="pf-v6-c-button__text">Entrar com OpenShift</span>
+        </button>
+      </form>
+
+      <p class="note">O acesso é liberado para quem tem permissão de leitura em todo o cluster, como
+        <code>cluster-admin</code> ou <code>cluster-reader</code>.</p>
+    </div>
+  </section>
+</main>
+<script src="/static/login.js" defer></script>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,7 @@
+# Recurso observado pelo operator e o chart aplicado para cada um.
+- group: insights.autoscaling.local
+  version: v1alpha1
+  kind: InsightsDashboard
+  chart: helm-charts/autoscaling-insights
+  # Reaplica o chart a cada 5 minutos, além de reagir a qualquer mudança.
+  reconcilePeriod: 5m

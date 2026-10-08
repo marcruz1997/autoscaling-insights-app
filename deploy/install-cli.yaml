@@ -1,0 +1,34 @@
+# Instalação pela linha de comando (alternativa ao OperatorHub do console).
+# Pré-requisito: deploy/catalogsource.yaml aplicado.
+#   oc apply -f deploy/install-cli.yaml
+# Instala o operator para todos os namespaces e cria o painel no namespace autoscaling-insights.
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: autoscaling-insights
+  namespace: openshift-operators
+spec:
+  channel: stable
+  name: autoscaling-insights
+  source: autoscaling-insights-catalog
+  sourceNamespace: openshift-marketplace
+  installPlanApproval: Automatic     # use Manual para aprovar cada atualização
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autoscaling-insights
+---
+# Aplique este recurso depois que o operator estiver instalado (o tipo InsightsDashboard
+# só existe a partir daí). Se aplicar tudo junto e der erro só nele, rode o comando de novo.
+apiVersion: insights.autoscaling.local/v1alpha1
+kind: InsightsDashboard
+metadata:
+  name: autoscaling-insights
+  namespace: autoscaling-insights
+spec:
+  title: Autoscaling Insights
+  excludeNamespaces: "^(openshift.*|kube-.*|default)$"
+  historyDays: 14
+  logoConfigMap: autoscaling-insights-logo

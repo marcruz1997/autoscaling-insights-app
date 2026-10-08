@@ -1,0 +1,1 @@
+Copiados de dashboard/login/ pelo build.sh antes de construir a imagem do operator.

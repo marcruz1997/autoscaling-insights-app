@@ -1,0 +1,121 @@
+# ServiceAccount do painel. A anotação faz dela um "cliente OAuth": depois do login,
+# o OpenShift devolve o usuário para a Route do painel.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: autoscaling-insights
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: autoscaling-insights
+  annotations:
+    serviceaccounts.openshift.io/oauth-redirectreference.primary: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"autoscaling-insights"}}'
+---
+# Leitura (somente) de deployments, pods, nós, PVCs, eventos, VPAs e HPAs em todos os namespaces.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: autoscaling-insights-reader
+  labels:
+    app: autoscaling-insights
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "nodes", "persistentvolumeclaims", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling.k8s.io"]
+    resources: ["verticalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: autoscaling-insights-reader
+  labels:
+    app: autoscaling-insights
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: autoscaling-insights-reader
+subjects:
+  - kind: ServiceAccount
+    name: autoscaling-insights
+    namespace: {{ .Release.Namespace }}
+---
+# Leitura de métricas de todos os namespaces no Thanos Querier.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: autoscaling-insights-monitoring-view
+  labels:
+    app: autoscaling-insights
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-monitoring-view
+subjects:
+  - kind: ServiceAccount
+    name: autoscaling-insights
+    namespace: {{ .Release.Namespace }}
+---
+# Permite ao oauth-proxy validar tokens e checar a permissão de quem faz login.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: autoscaling-insights-auth-delegator
+  labels:
+    app: autoscaling-insights
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - kind: ServiceAccount
+    name: autoscaling-insights
+    namespace: {{ .Release.Namespace }}
+{{- if .Values.consoleLink.enabled }}
+---
+# Atalho no menu de aplicações do console: o painel cria o ConsoleLink com o endereço da
+# sua Route e o vincula ao ClusterRole acima, que o apaga junto quando o painel é removido.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: autoscaling-insights-consolelink
+  labels:
+    app: autoscaling-insights
+rules:
+  - apiGroups: ["console.openshift.io"]
+    resources: ["consolelinks"]
+    verbs: ["create"]
+  - apiGroups: ["console.openshift.io"]
+    resources: ["consolelinks"]
+    resourceNames: ["autoscaling-insights"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["route.openshift.io"]
+    resources: ["routes"]
+    resourceNames: ["autoscaling-insights"]
+    verbs: ["get"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    resourceNames: ["autoscaling-insights-reader"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: autoscaling-insights-consolelink
+  labels:
+    app: autoscaling-insights
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: autoscaling-insights-consolelink
+subjects:
+  - kind: ServiceAccount
+    name: autoscaling-insights
+    namespace: {{ .Release.Namespace }}
+{{- end }}

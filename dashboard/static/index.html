@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autoscaling Insights</title>
+<link rel="icon" type="image/svg+xml" href="static/icon.svg" id="favicon">
+<!-- PatternFly 6 e Chart.js vêm embutidos na imagem (baixados no build), sem depender de CDN. -->
+<link rel="stylesheet" href="static/vendor/patternfly/patternfly.min.css">
+<link rel="stylesheet" href="static/vendor/patternfly/patternfly-addons.css">
+<link rel="stylesheet" href="static/app.css">
+<script>
+  // Aplica o tema antes de desenhar a página (evita "piscar" claro → escuro).
+  (function () {
+    var pref = 'system';
+    try { pref = localStorage.getItem('vpa-theme') || 'system'; } catch (e) {}
+    var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) document.documentElement.classList.add('pf-v6-theme-dark');
+  })();
+</script>
+<script src="static/vendor/chart.umd.js" defer></script>
+<script src="static/app.js" defer></script>
+</head>
+<body>
+<div class="pf-v6-c-page" id="page">
+
+  <!-- ================= MASTHEAD ================= -->
+  <header class="pf-v6-c-masthead">
+    <div class="pf-v6-c-masthead__main">
+      <span class="pf-v6-c-masthead__toggle">
+        <button class="pf-v6-c-button pf-m-plain" type="button" id="navToggle" aria-label="Menu de navegação" aria-expanded="true">
+          <span class="pf-v6-c-button__icon">
+            <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 3h14v1.6H1zm0 4.2h14v1.6H1zm0 4.2h14V13H1z"/></svg>
+          </span>
+        </button>
+      </span>
+      <div class="pf-v6-c-masthead__brand">
+        <a class="pf-v6-c-masthead__logo brand" href="#overview">
+          <img id="logo" alt="" hidden onload="this.hidden=false" onerror="this.remove()">
+          <span class="brand-text">
+            <span class="brand-name" id="appTitle">Autoscaling Insights</span>
+            <span class="brand-sub">VPA · HPA<span id="appVersion"></span></span>
+          </span>
+        </a>
+      </div>
+    </div>
+    <div class="pf-v6-c-masthead__content">
+      <div class="masthead-tools">
+        <button class="pf-v6-c-button pf-m-plain" type="button" id="themeBtn" aria-label="Tema" title="Tema">
+          <span class="pf-v6-c-button__icon" id="themeIcon"></span>
+        </button>
+        <span class="user-menu" id="userMenu" hidden>
+          <svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5z"/></svg>
+          <span id="userName"></span>
+          <a class="pf-v6-c-button pf-m-link pf-m-inline" href="oauth/sign_out"><span class="pf-v6-c-button__text">Sair</span></a>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MENU LATERAL ================= -->
+  <div class="pf-v6-c-page__sidebar pf-m-expanded" id="sidebar">
+    <div class="pf-v6-c-page__sidebar-body">
+      <nav class="pf-v6-c-nav" aria-label="Navegação">
+        <section class="pf-v6-c-nav__section">
+          <h2 class="pf-v6-c-nav__section-title">Vertical · VPA</h2>
+          <ul class="pf-v6-c-nav__list" role="list">
+            <li class="pf-v6-c-nav__item"><a class="pf-v6-c-nav__link" href="#overview" data-tab="overview"><span class="pf-v6-c-nav__link-text">Overview</span></a></li>
+            <li class="pf-v6-c-nav__item"><a class="pf-v6-c-nav__link" href="#deploy" data-tab="deploy"><span class="pf-v6-c-nav__link-text">Recommendations</span></a></li>
+          </ul>
+        </section>
+        <section class="pf-v6-c-nav__section">
+          <h2 class="pf-v6-c-nav__section-title">Horizontal · HPA</h2>
+          <ul class="pf-v6-c-nav__list" role="list">
+            <li class="pf-v6-c-nav__item"><a class="pf-v6-c-nav__link" href="#hpa-overview" data-tab="hpa-overview"><span class="pf-v6-c-nav__link-text">Overview</span></a></li>
+            <li class="pf-v6-c-nav__item"><a class="pf-v6-c-nav__link" href="#hpa" data-tab="hpa"><span class="pf-v6-c-nav__link-text">Scaling</span></a></li>
+          </ul>
+        </section>
+        <section class="pf-v6-c-nav__section">
+          <h2 class="pf-v6-c-nav__section-title">Workloads</h2>
+          <ul class="pf-v6-c-nav__list" role="list">
+            <li class="pf-v6-c-nav__item"><a class="pf-v6-c-nav__link" href="#pods" data-tab="pods"><span class="pf-v6-c-nav__link-text">Pods</span></a></li>
+            <li class="pf-v6-c-nav__item"><a class="pf-v6-c-nav__link" href="#nodes" data-tab="nodes"><span class="pf-v6-c-nav__link-text">Nodes</span></a></li>
+            <li class="pf-v6-c-nav__item"><a class="pf-v6-c-nav__link" href="#storage" data-tab="storage"><span class="pf-v6-c-nav__link-text">Storage</span></a></li>
+          </ul>
+        </section>
+        <section class="pf-v6-c-nav__section">
+          <h2 class="pf-v6-c-nav__section-title">Ajuda</h2>
+          <ul class="pf-v6-c-nav__list" role="list">
+            <li class="pf-v6-c-nav__item"><a class="pf-v6-c-nav__link" href="#help" data-tab="help"><span class="pf-v6-c-nav__link-text">Manual</span></a></li>
+            <li class="pf-v6-c-nav__item"><a class="pf-v6-c-nav__link" href="#notice" data-tab="notice"><span class="pf-v6-c-nav__link-text">Importante</span></a></li>
+          </ul>
+        </section>
+      </nav>
+      <p class="sidebar-version" id="sidebarVersion" hidden></p>
+      <p class="sidebar-note">Ferramenta não oficial, sem vínculo ou suporte da Red Hat. <a href="#notice" data-tab-link="notice">Leia o aviso</a>.</p>
+    </div>
+  </div>
+
+  <!-- ================= CONTEÚDO ================= -->
+  <div class="pf-v6-c-page__main-container" tabindex="-1">
+    <main class="pf-v6-c-page__main" tabindex="-1">
+
+      <section class="pf-v6-c-page__main-section">
+        <div class="pf-v6-c-page__main-body">
+          <div class="page-head">
+            <div>
+              <h1 class="pf-v6-c-title pf-m-2xl" id="pageTitle">Overview</h1>
+              <p class="page-desc" id="pageDesc"></p>
+            </div>
+            <div class="page-head-right">
+              <div class="range-wrap" id="rangeWrap">
+              <span class="range-label" id="rangeLabel">Time range</span>
+              <div class="pf-v6-c-toggle-group pf-m-compact" role="group" aria-labelledby="rangeLabel" id="rangeGroup">
+                <div class="pf-v6-c-toggle-group__item"><button class="pf-v6-c-toggle-group__button" type="button" data-range="15m"><span class="pf-v6-c-toggle-group__text">15 min</span></button></div>
+                <div class="pf-v6-c-toggle-group__item"><button class="pf-v6-c-toggle-group__button pf-m-selected" type="button" data-range="1h"><span class="pf-v6-c-toggle-group__text">1 h</span></button></div>
+                <div class="pf-v6-c-toggle-group__item"><button class="pf-v6-c-toggle-group__button" type="button" data-range="6h"><span class="pf-v6-c-toggle-group__text">6 h</span></button></div>
+                <div class="pf-v6-c-toggle-group__item"><button class="pf-v6-c-toggle-group__button" type="button" data-range="24h"><span class="pf-v6-c-toggle-group__text">24 h</span></button></div>
+                <div class="pf-v6-c-toggle-group__item"><button class="pf-v6-c-toggle-group__button" type="button" data-range="7d"><span class="pf-v6-c-toggle-group__text">7 d</span></button></div>
+              </div>
+              </div>
+              <button class="pf-v6-c-button pf-m-secondary pf-m-small report-btn" type="button" id="reportBtn" title="Abre o relatório completo em uma nova aba (pode ser salvo em PDF)">
+                <span class="pf-v6-c-button__icon pf-m-start"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 0h7l4 4v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1zm6 1.5V5h3.5zM4.5 13h1.6V9H4.5zm2.7 0h1.6V7H7.2zm2.7 0h1.6v-5H9.9z"/></svg></span>
+                <span class="pf-v6-c-button__text">Export report</span></button>
+              <span class="updated" id="updated">carregando…</span>
+            </div>
+          </div>
+
+          <!-- seletores (escondidos no overview e na ajuda) -->
+          <div class="selectors" id="selectors" hidden>
+            <label class="sel">
+              <span class="sel-label">Namespace</span>
+              <span class="pf-v6-c-form-control"><select id="selNs" aria-label="Namespace"></select>
+                <span class="pf-v6-c-form-control__utilities"><span class="pf-v6-c-form-control__toggle-icon"><svg class="ico" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5z"/></svg></span></span></span>
+            </label>
+            <label class="sel grow">
+              <span class="sel-label">Deployment</span>
+              <span class="pf-v6-c-form-control"><select id="selDep" aria-label="Deployment"></select>
+                <span class="pf-v6-c-form-control__utilities"><span class="pf-v6-c-form-control__toggle-icon"><svg class="ico" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5z"/></svg></span></span></span>
+            </label>
+            <label class="sel">
+              <span class="sel-label">Container</span>
+              <span class="pf-v6-c-form-control"><select id="selCt" aria-label="Container"></select>
+                <span class="pf-v6-c-form-control__utilities"><span class="pf-v6-c-form-control__toggle-icon"><svg class="ico" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5z"/></svg></span></span></span>
+            </label>
+          </div>
+
+          <div id="errors"></div>
+        </div>
+      </section>
+
+      <!-- ================= VISÃO GERAL ================= -->
+      <section class="pf-v6-c-page__main-section tab" id="tab-overview">
+        <div class="pf-v6-c-page__main-body">
+          <div class="stats" id="ovStats"></div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Resumo por namespace</h2></div>
+            <div class="pf-v6-c-card__body">
+              <p class="card-desc">Total de requests (request × pods) comparado com o target do VPA (target × pods). Considera apenas deployments com VPA.</p>
+              <div class="table-wrap" id="ovNs"></div>
+            </div>
+          </div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Deployments com VPA</h2></div>
+            <div class="pf-v6-c-card__body">
+              <p class="card-desc">Uso atual (média por pod, 5 min), P90 de CPU e pico de memória no time range selecionado, request atual e target do VPA.
+                Delta = (request − target) × pods. Selecione uma linha para abrir o deployment.</p>
+              <div class="table-wrap" id="ovTable"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= DEPLOYMENT ================= -->
+      <section class="pf-v6-c-page__main-section tab" id="tab-deploy" hidden>
+        <div class="pf-v6-c-page__main-body">
+          <div class="stats" id="dStats"></div>
+          <div id="dBanner"></div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Configuração atual × recomendação do VPA</h2></div>
+            <div class="pf-v6-c-card__body">
+              <p class="card-desc">Valores por pod do container selecionado. Os limits recomendados preservam o ratio limit/request atual, mesmo comportamento do VPA ao aplicar a recomendação.</p>
+              <div id="dCompare"></div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="pf-v6-c-card">
+              <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Recommendation bounds</h2></div>
+              <div class="pf-v6-c-card__body"><p class="card-desc">Valores por pod: lower bound, target, upper bound e uncapped target.</p><div class="table-wrap" id="dRec"></div></div>
+            </div>
+            <div class="pf-v6-c-card">
+              <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Status do VPA</h2></div>
+              <div class="pf-v6-c-card__body" id="dCond"></div>
+            </div>
+          </div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Percentis de uso × target do VPA</h2></div>
+            <div class="pf-v6-c-card__body">
+              <p class="card-desc">Todas as amostras de todos os pods no time range selecionado. O recommender do VPA usa até 8 dias de histórico: CPU ≈ P90 e memória ≈ pico, com safety margin de ~15%.</p>
+              <div class="table-wrap" id="dPct"></div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">CPU usage por pod</h2></div>
+              <div class="pf-v6-c-card__body"><p class="card-desc">millicores · tracejado: request, limit e bounds do VPA</p><div class="chart"><canvas id="cCpu"></canvas></div></div></div>
+            <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Memory usage por pod (working set)</h2></div>
+              <div class="pf-v6-c-card__body"><p class="card-desc">MiB · tracejado: request, limit e bounds do VPA</p><div class="chart"><canvas id="cMem"></canvas></div></div></div>
+            <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Histórico de recomendação · CPU</h2></div>
+              <div class="pf-v6-c-card__body"><p class="card-desc" id="hCpuDesc">millicores</p><div class="chart"><canvas id="cHCpu"></canvas></div></div></div>
+            <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Histórico de recomendação · memory</h2></div>
+              <div class="pf-v6-c-card__body"><p class="card-desc" id="hMemDesc">MiB</p><div class="chart"><canvas id="cHMem"></canvas></div></div></div>
+            <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">CPU throttling</h2></div>
+              <div class="pf-v6-c-card__body"><p class="card-desc">% dos CFS periods com throttling pelo CPU limit (aplicável apenas com limit definido)</p><div class="chart"><canvas id="cThr"></canvas></div></div></div>
+            <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Restarts (cumulativo)</h2></div>
+              <div class="pf-v6-c-card__body"><p class="card-desc">por pod · cada degrau indica um restart (termination reason na página Pods)</p><div class="chart"><canvas id="cRst"></canvas></div></div></div>
+            <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Memory RSS</h2></div>
+              <div class="pf-v6-c-card__body"><p class="card-desc">MiB · resident set size, sem page cache</p><div class="chart"><canvas id="cRss"></canvas></div></div></div>
+            <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Network I/O</h2></div>
+              <div class="pf-v6-c-card__body"><p class="card-desc">KiB/s por pod · RX (sólida) e TX (tracejada)</p><div class="chart"><canvas id="cNet"></canvas></div></div></div>
+          </div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Aplicação manual da recomendação</h2></div>
+            <div class="pf-v6-c-card__body">
+              <p class="card-desc">Exibida apenas quando algum request está fora dos bounds do VPA. Indicado para update mode Off: o deployment executa um rollout com os novos valores (arredondados para cima).</p>
+              <div id="dCmd"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= HPA: VISÃO GERAL ================= -->
+      <section class="pf-v6-c-page__main-section tab" id="tab-hpa-overview" hidden>
+        <div class="pf-v6-c-page__main-body">
+          <div class="stats" id="hoStats"></div>
+          <div id="hoBanner"></div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">HorizontalPodAutoscalers</h2></div>
+            <div class="pf-v6-c-card__body">
+              <p class="card-desc">Replicas atuais em relação ao min/max, utilização atual × target de cada métrica e compatibilidade com o VPA.
+                Selecione uma linha para ver os detalhes de scaling.</p>
+              <div class="table-wrap" id="hoTable"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= HPA: ESCALONAMENTO ================= -->
+      <section class="pf-v6-c-page__main-section tab" id="tab-hpa" hidden>
+        <div class="pf-v6-c-page__main-body">
+          <div class="stats" id="hStats"></div>
+          <div id="hBanner"></div>
+          <div id="hEmpty"></div>
+          <div id="hBody">
+            <div class="grid-2">
+              <div class="pf-v6-c-card">
+                <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Scaling metrics</h2></div>
+                <div class="pf-v6-c-card__body"><p class="card-desc">target configurado × valor atual medido pelo HPA</p><div class="table-wrap" id="hMetrics"></div></div>
+              </div>
+              <div class="pf-v6-c-card">
+                <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Configuração e status</h2></div>
+                <div class="pf-v6-c-card__body" id="hConfig"></div>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Replicas</h2></div>
+                <div class="pf-v6-c-card__body"><p class="card-desc">current e desired replicas · tracejado: minReplicas e maxReplicas</p><div class="chart"><canvas id="cHRep"></canvas></div></div></div>
+              <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">CPU utilization</h2></div>
+                <div class="pf-v6-c-card__body"><p class="card-desc">% do request, mesmo cálculo do HPA · tracejado: target do HPA</p><div class="chart"><canvas id="cHCpuU"></canvas></div></div></div>
+              <div class="pf-v6-c-card"><div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Memory utilization</h2></div>
+                <div class="pf-v6-c-card__body"><p class="card-desc">% do request · tracejado: target do HPA (quando escala por memória)</p><div class="chart"><canvas id="cHMemU"></canvas></div></div></div>
+              <div class="pf-v6-c-card">
+                <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Compatibilidade VPA × HPA</h2></div>
+                <div class="pf-v6-c-card__body" id="hVpa"></div>
+              </div>
+            </div>
+            <div class="pf-v6-c-card">
+              <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Scaling events</h2></div>
+              <div class="pf-v6-c-card__body">
+                <p class="card-desc">Eventos recentes do HPA. O Kubernetes retém eventos por cerca de 1 hora (event TTL).</p>
+                <div class="table-wrap" id="hEvents"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PODS ================= -->
+      <section class="pf-v6-c-page__main-section tab" id="tab-pods" hidden>
+        <div class="pf-v6-c-page__main-body">
+          <div id="pBanner"></div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Pods do deployment</h2></div>
+            <div class="pf-v6-c-card__body">
+              <p class="card-desc">Status, restarts, last termination reason (OOMKilled = memory limit excedido), uso atual e % do request.</p>
+              <div class="table-wrap" id="pTable"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= NÓS ================= -->
+      <section class="pf-v6-c-page__main-section tab" id="tab-nodes" hidden>
+        <div class="pf-v6-c-page__main-body">
+          <div class="stats" id="nStats"></div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Nodes do cluster</h2></div>
+            <div class="pf-v6-c-card__body">
+              <p class="card-desc">Requested = soma dos requests dos pods em execução · usage = consumo real · available = allocatable − requested.</p>
+              <div class="table-wrap" id="nTable"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ARMAZENAMENTO ================= -->
+      <section class="pf-v6-c-page__main-section tab" id="tab-storage" hidden>
+        <div class="pf-v6-c-page__main-body">
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">PersistentVolumeClaims do namespace</h2></div>
+            <div class="pf-v6-c-card__body">
+              <p class="card-desc">Em destaque: PVCs montados pelos pods do deployment selecionado.</p>
+              <div class="table-wrap" id="sTable"></div>
+            </div>
+          </div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__title"><h2 class="pf-v6-c-card__title-text">Volume usage ao longo do tempo</h2></div>
+            <div class="pf-v6-c-card__body"><p class="card-desc" id="sChartDesc">MiB usados por PVC</p><div class="chart"><canvas id="cPvc"></canvas></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= IMPORTANTE ================= -->
+      <section class="pf-v6-c-page__main-section tab" id="tab-notice" hidden>
+        <div class="pf-v6-c-page__main-body">
+          <div class="pf-v6-c-alert pf-m-inline pf-m-warning notice-alert">
+            <div class="pf-v6-c-alert__icon"><svg class="ico" viewBox="0 0 16 16"><path d="M8 .8 0 15h16zm.9 11.9H7.1V11h1.8zm0-2.7H7.1V5.5h1.8z"/></svg></div>
+            <p class="pf-v6-c-alert__title"><span class="pf-v6-screen-reader">Aviso:</span> Esta aplicação não é um produto oficial da Red Hat e não tem suporte.</p>
+          </div>
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__body">
+              <div class="pf-v6-c-content notice">
+                <h2>Natureza da aplicação</h2>
+                <p>O <span class="app-name">Autoscaling Insights</span> é uma ferramenta independente, desenvolvida sob medida para apoiar a análise do
+                  Vertical Pod Autoscaler (VPA) e do Horizontal Pod Autoscaler (HPA) em clusters OpenShift.</p>
+                <p>Ela <strong>não é um produto, componente ou funcionalidade oficial da Red Hat</strong>, não faz parte do Red Hat OpenShift e
+                  não foi desenvolvida, revisada, certificada, endossada ou patrocinada pela Red Hat, Inc. O uso dos componentes visuais do
+                  PatternFly, o design system de código aberto usado no console do OpenShift, não indica nenhum vínculo com a Red Hat.</p>
+
+                <h2>Ausência de suporte</h2>
+                <ul>
+                  <li>Não há suporte da Red Hat para esta aplicação. Chamados sobre ela <strong>não devem ser abertos</strong> no Red Hat Customer Portal.</li>
+                  <li>A instalação desta aplicação não altera o suporte do Red Hat OpenShift, do VPA ou do HPA, que continuam sob os termos da
+                    sua subscrição Red Hat.</li>
+                  <li>Não há garantia de manutenção, correções, atualizações de segurança, compatibilidade com versões futuras do OpenShift
+                    nem de disponibilidade.</li>
+                </ul>
+
+                <h2>Isenção de responsabilidade</h2>
+                <p>A aplicação é fornecida <strong>“no estado em que se encontra”</strong>, sem garantias de qualquer tipo, expressas ou implícitas,
+                  incluindo garantias de funcionamento, exatidão das informações, adequação a uma finalidade específica ou ausência de falhas.</p>
+                <p>A Red Hat, a empresa que disponibilizou esta aplicação e os consultores envolvidos no seu desenvolvimento ou implantação
+                  <strong>não se responsabilizam</strong> pelo seu funcionamento, suportabilidade, manutenção ou disponibilidade, nem por
+                  quaisquer danos, perdas, indisponibilidades ou incidentes decorrentes do seu uso, mau uso ou impossibilidade de uso.</p>
+
+                <h2>Uso das informações</h2>
+                <ul>
+                  <li>Os números exibidos são estimativas obtidas do monitoramento do cluster e das recomendações do VPA. Eles podem estar
+                    incompletos, atrasados ou incorretos.</li>
+                  <li>Qualquer decisão tomada com base no painel, como alterar requests, limits, replicas ou update modes do VPA e do HPA, é de
+                    <strong>responsabilidade exclusiva de quem a executa</strong>.</li>
+                  <li>Valide toda mudança em ambiente de teste e siga os processos de mudança da sua organização antes de aplicá-la em produção.</li>
+                </ul>
+
+                <h2>Segurança e acesso</h2>
+                <ul>
+                  <li>A aplicação apenas lê informações do cluster, mas usa permissões de leitura em todos os namespaces (deployments, pods,
+                    nodes, volumes, events, VPAs, HPAs e métricas).</li>
+                  <li>Cabe aos administradores do cluster avaliar esse acesso, decidir quem pode usar o painel e manter as imagens e
+                    dependências atualizadas.</li>
+                </ul>
+
+                <h2>Componentes de terceiros e marcas</h2>
+                <p>A aplicação usa componentes de código aberto, cada um sob a sua própria licença, entre eles PatternFly, Chart.js, Flask,
+                  requests e gunicorn, além da imagem base Red Hat Universal Base Image (UBI).</p>
+                <p>Red Hat, OpenShift e o logotipo da Red Hat são marcas registradas da Red Hat, Inc. nos Estados Unidos e em outros países.
+                  As demais marcas pertencem aos seus respectivos titulares.</p>
+
+                <p class="notice-foot">Ao usar esta aplicação, você declara ter lido e concordado com estes termos.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= MANUAL ================= -->
+      <section class="pf-v6-c-page__main-section tab" id="tab-help" hidden>
+        <div class="pf-v6-c-page__main-body">
+          <div class="pf-v6-c-card">
+            <div class="pf-v6-c-card__body">
+              <div class="pf-v6-c-content help">
+                <h2>O que o VPA recomenda</h2>
+                <dl>
+                  <dt>Target</dt><dd>Request recomendado por pod. É o valor que o VPA aplica nos update modes Auto, Recreate e Initial.</dd>
+                  <dt>Lower bound</dt><dd>Valor mínimo considerado seguro. Request abaixo dele indica under-provisioning; em modo Auto/Recreate, o VPA faz evict do pod.</dd>
+                  <dt>Upper bound</dt><dd>Valor máximo justificado pelo uso. Request acima dele indica over-provisioning; em modo Auto/Recreate, também dispara evict.</dd>
+                  <dt>Uncapped target</dt><dd>Target sem aplicar minAllowed/maxAllowed da resourcePolicy. Se diferente do target, a policy está limitando a recomendação.</dd>
+                </dl>
+                <h2>Como o VPA calcula</h2>
+                <p>O recommender mantém um histograma de uso por container, com decaimento exponencial (half-life de 24 h) e até 8 dias de histórico.
+                  CPU usa aproximadamente o P90; memória usa o pico por intervalo. Ambos recebem safety margin (~15%).
+                  Com pouco histórico, o intervalo entre lower e upper bound é amplo e a condition <strong>LowConfidence</strong> pode aparecer.
+                  A recomendação converge após algumas horas ou dias de carga real.</p>
+                <h2>Update modes</h2>
+                <dl>
+                  <dt>Off</dt><dd>Apenas gera recomendações, sem alterar os pods. Indicado para observação e sizing.</dd>
+                  <dt>Initial</dt><dd>Aplica a recomendação somente na criação do pod (admission).</dd>
+                  <dt>Recreate / Auto</dt><dd>Faz evict dos pods cujo request está fora dos bounds e aplica o target na recriação. Gera restarts.</dd>
+                </dl>
+                <h2>Status labels</h2>
+                <dl>
+                  <dt id="helpOk"></dt><dd>Request entre lower e upper bound (right-sized).</dd>
+                  <dt id="helpLow"></dt><dd>Request abaixo do lower bound (under-provisioned): risco de CPU throttling ou OOMKilled.</dd>
+                  <dt id="helpHigh"></dt><dd>Request acima do upper bound (over-provisioned): capacidade reservada e ociosa.</dd>
+                  <dt>Delta</dt><dd>(request − target) × pods. Positivo indica over-provisioning; negativo indica under-provisioning.</dd>
+                  <dt>Working set</dt><dd>Memória considerada pelo kubelet para OOM kill e eviction. É a métrica usada pelo VPA.</dd>
+                </dl>
+                <h2>HPA: algoritmo de scaling</h2>
+                <p>O HPA ajusta o número de replicas: <strong>desiredReplicas = ⌈currentReplicas × currentMetricValue ÷ targetValue⌉</strong>.
+                  Para CPU e memória, o valor é a <strong>utilização em % do request</strong>: soma do uso de todos os pods dividida pela soma dos requests.
+                  Desvios de até 10% em relação ao target são ignorados (tolerance). No scale down, o HPA aguarda por padrão 5 minutos
+                  (stabilization window); no scale up, reage imediatamente.</p>
+                <dl>
+                  <dt>AbleToScale</dt><dd>O HPA consegue alterar o scale do deployment. False indica falta de permissão ou scaleTargetRef inexistente.</dd>
+                  <dt>ScalingActive</dt><dd>Métricas disponíveis. False geralmente indica container sem request de CPU/memória ou métrica ausente.</dd>
+                  <dt>ScalingLimited</dt><dd>O valor calculado atingiu minReplicas ou maxReplicas. Permanecer em maxReplicas por longos períodos indica capacidade insuficiente.</dd>
+                </dl>
+                <h2>VPA e HPA no mesmo deployment</h2>
+                <dl>
+                  <dt id="helpConflict"></dt><dd>VPA em modo Auto, Recreate ou Initial e HPA escalando pela mesma métrica (CPU ou memória).
+                    O HPA mede % do request e o VPA altera o request, gerando um loop de feedback. Use o VPA em modo Off ou configure o HPA com outra métrica.</dd>
+                  <dt id="helpRecommend"></dt><dd>VPA em modo Off: apenas recomenda, sem conflito. A página Scaling simula a utilização
+                    e o número de replicas caso o request recomendado seja aplicado.</dd>
+                  <dt id="helpCombined"></dt><dd>VPA ativo e HPA escalando por custom ou external metric: combinação suportada.</dd>
+                </dl>
+                <h2>Histórico do VPA</h2>
+                <p id="helpHist">O OpenShift não exporta as recomendações do VPA para o Prometheus. Por isso o dashboard persiste o histórico,
+                  com coleta a cada minuto, desde a instalação.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ================= EXPORT REPORT (opções) ================= -->
+<div class="pf-v6-c-backdrop rm-backdrop" id="reportModal" hidden>
+  <div class="pf-v6-l-bullseye">
+    <div class="pf-v6-c-modal-box pf-m-md rm-box" role="dialog" aria-modal="true" aria-labelledby="rmTitle">
+      <div class="pf-v6-c-modal-box__close">
+        <button class="pf-v6-c-button pf-m-plain" type="button" aria-label="Fechar" data-rm-close>
+          <span class="pf-v6-c-button__icon"><svg class="ico" viewBox="0 0 16 16"><path d="M3.4 2 8 6.6 12.6 2 14 3.4 9.4 8l4.6 4.6-1.4 1.4L8 9.4 3.4 14 2 12.6 6.6 8 2 3.4z"/></svg></span></button>
+      </div>
+      <header class="pf-v6-c-modal-box__header">
+        <h1 class="pf-v6-c-modal-box__title" id="rmTitle">Export report</h1>
+        <div class="pf-v6-c-modal-box__description">Escolha o escopo e as seções. O relatório abre em uma nova aba e pode ser salvo em PDF.</div>
+      </header>
+      <div class="pf-v6-c-modal-box__body">
+        <div class="rm-row">
+          <label class="rm-field"><span class="rm-label">Time range</span>
+            <span class="pf-v6-c-form-control"><select id="rmRange">
+              <option value="15m">15 min</option><option value="1h">1 h</option><option value="6h">6 h</option>
+              <option value="24h">24 h</option><option value="7d">7 d</option></select>
+              <span class="pf-v6-c-form-control__utilities"><span class="pf-v6-c-form-control__toggle-icon"><svg class="ico" viewBox="0 0 16 16"><path d="M3 6l5 5 5-5z"/></svg></span></span></span>
+          </label>
+          <label class="rm-switch"><input type="checkbox" id="rmAttention">
+            <span><b>Somente pontos de atenção</b><br><small>Lista só containers fora dos bounds, HPAs com problema e pods com restarts/OOMKilled.</small></span></label>
+        </div>
+        <div class="rm-cols">
+          <fieldset class="rm-pick">
+            <legend class="rm-label">Namespaces <span class="rm-count" id="rmNsCount"></span></legend>
+            <div class="rm-tools"><input type="search" class="rm-search" id="rmNsSearch" placeholder="Filtrar namespaces" aria-label="Filtrar namespaces">
+              <button type="button" class="pf-v6-c-button pf-m-link pf-m-inline" data-rm-all="ns">Todos</button>
+              <button type="button" class="pf-v6-c-button pf-m-link pf-m-inline" data-rm-none="ns">Nenhum</button></div>
+            <div class="rm-list" id="rmNsList"></div>
+          </fieldset>
+          <fieldset class="rm-pick">
+            <legend class="rm-label">Deployments <span class="rm-count" id="rmDepCount"></span></legend>
+            <div class="rm-tools"><input type="search" class="rm-search" id="rmDepSearch" placeholder="Filtrar deployments" aria-label="Filtrar deployments">
+              <button type="button" class="pf-v6-c-button pf-m-link pf-m-inline" data-rm-all="dep">Todos</button>
+              <button type="button" class="pf-v6-c-button pf-m-link pf-m-inline" data-rm-none="dep">Nenhum</button></div>
+            <div class="rm-list" id="rmDepList"></div>
+          </fieldset>
+        </div>
+        <fieldset class="rm-sections">
+          <legend class="rm-label">Seções</legend>
+          <label><input type="checkbox" name="rmSec" value="summary" checked> Resumo executivo</label>
+          <label><input type="checkbox" name="rmSec" value="vpa" checked> VPA · Recomendações</label>
+          <label><input type="checkbox" name="rmSec" value="history" checked> VPA · Histórico</label>
+          <label><input type="checkbox" name="rmSec" value="hpa" checked> HPA · Scaling</label>
+          <label><input type="checkbox" name="rmSec" value="nodes" checked> Nodes</label>
+          <label><input type="checkbox" name="rmSec" value="pods" checked> Pods</label>
+        </fieldset>
+        <p class="rm-error" id="rmError" hidden></p>
+      </div>
+      <footer class="pf-v6-c-modal-box__footer">
+        <button class="pf-v6-c-button pf-m-primary" type="button" id="rmGenerate"><span class="pf-v6-c-button__text">Gerar relatório</span></button>
+        <button class="pf-v6-c-button pf-m-link" type="button" data-rm-close><span class="pf-v6-c-button__text">Cancelar</span></button>
+      </footer>
+    </div>
+  </div>
+</div>
+</body>
+</html>

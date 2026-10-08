@@ -1,0 +1,6 @@
+apiVersion: v2
+name: autoscaling-insights
+description: Painel de VPA e HPA para OpenShift (ferramenta não oficial, sem suporte da Red Hat).
+type: application
+version: 1.0.0       # substituído pela versão do build (build.sh)
+appVersion: "1.0.0"

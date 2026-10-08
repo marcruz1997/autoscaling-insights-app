@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: autoscaling-insights
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: autoscaling-insights
+  annotations:
+    # O OpenShift gera e renova sozinho o certificado TLS interno do proxy.
+    service.beta.openshift.io/serving-cert-secret-name: autoscaling-insights-tls
+spec:
+  selector:
+    app: autoscaling-insights
+  ports:
+    - name: https
+      port: 443
+      targetPort: https
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: autoscaling-insights
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: autoscaling-insights
+spec:
+  {{- if .Values.route.host }}
+  host: {{ .Values.route.host }}
+  {{- end }}
+  to:
+    kind: Service
+    name: autoscaling-insights
+  port:
+    targetPort: https
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect

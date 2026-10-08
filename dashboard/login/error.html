@@ -1,0 +1,49 @@
+{{define "error.html"}}<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acesso não liberado · Autoscaling Insights</title>
+<link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+<link rel="stylesheet" href="/static/vendor/patternfly/patternfly.min.css">
+<link rel="stylesheet" href="/static/login.css">
+</head>
+<body>
+<main class="login">
+  <section class="brand compact" aria-label="Sobre o painel">
+    <div class="brand-inner">
+      <p class="product" data-brand-title>Autoscaling Insights</p>
+      <p class="pitch">Recomendações do VPA e escalonamento do HPA dos seus deployments, em um só lugar.</p>
+      <p class="disclaimer">Ferramenta não oficial, sem vínculo ou suporte da Red Hat.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-inner">
+      <img class="logo" src="/logo" alt="" hidden onload="this.hidden=false" onerror="this.remove()">
+      <h1>Não foi possível entrar</h1>
+      <p class="lead">Sua conta do OpenShift foi reconhecida, mas não tem acesso a este painel, ou o login não foi concluído.</p>
+
+      <div class="fix">
+        <h2>Como liberar o acesso</h2>
+        <p>Peça a um administrador do cluster para dar permissão de leitura à sua conta:</p>
+        <pre><code>oc adm policy add-cluster-role-to-user cluster-reader &lt;seu-usuário&gt;</code></pre>
+        <p>Depois, entre de novo. Para usar outra conta, saia primeiro do console do OpenShift.</p>
+      </div>
+
+      <div class="actions">
+        <a class="pf-v6-c-button pf-m-primary signin" href="{{.ProxyPrefix}}/sign_in"><span class="pf-v6-c-button__text">Entrar de novo</span></a>
+      </div>
+
+      <details class="detail">
+        <summary>Detalhe técnico</summary>
+        <p><strong>{{.Title}}</strong></p>
+        <p>{{.Message}}</p>
+      </details>
+    </div>
+  </section>
+</main>
+<script src="/static/login.js" defer></script>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,33 @@
+# Volume do histórico do VPA. Mantido mesmo se o painel for removido (resource-policy: keep),
+# para não perder o histórico numa reinstalação.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: autoscaling-insights-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: autoscaling-insights
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.storage.size }}
+  {{- if .Values.storage.storageClassName }}
+  storageClassName: {{ .Values.storage.storageClassName }}
+  {{- end }}
+---
+# Telas de login e de erro do oauth-proxy (templates Go; não são processados pelo Helm).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autoscaling-insights-login
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: autoscaling-insights
+data:
+  sign_in.html: |
+{{ .Files.Get "files/sign_in.html" | indent 4 }}
+  error.html: |
+{{ .Files.Get "files/error.html" | indent 4 }}

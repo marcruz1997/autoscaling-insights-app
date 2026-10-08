@@ -1,0 +1,103 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: insightsdashboards.insights.autoscaling.local
+spec:
+  group: insights.autoscaling.local
+  names:
+    kind: InsightsDashboard
+    listKind: InsightsDashboardList
+    plural: insightsdashboards
+    singular: insightsdashboard
+    shortNames: ["insights"]
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Titulo
+          type: string
+          jsonPath: .spec.title
+        - name: Idade
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          description: Instância do painel Autoscaling Insights (VPA e HPA). Crie apenas uma por cluster.
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              description: Configuração do painel. Todos os campos são opcionais.
+              properties:
+                title:
+                  type: string
+                  description: Nome exibido no topo e na tela de login.
+                excludeNamespaces:
+                  type: string
+                  description: Expressão regular dos namespaces escondidos das listas. Use "^$" para mostrar todos.
+                historyDays:
+                  type: integer
+                  minimum: 1
+                  maximum: 90
+                  description: Dias de histórico das recomendações do VPA.
+                sampleIntervalSeconds:
+                  type: integer
+                  minimum: 10
+                  description: Intervalo, em segundos, entre gravações do histórico.
+                logoConfigMap:
+                  type: string
+                  description: ConfigMap, no mesmo namespace, com o logo (chave logo.png, logo.svg ou logo.jpg).
+                sessionDuration:
+                  type: string
+                  description: Duração da sessão de login (ex. 8h0m0s).
+                oauthProxyImage:
+                  type: string
+                  description: Imagem do oauth-proxy. Normalmente não precisa mudar.
+                image:
+                  type: string
+                  description: Imagem do painel. Normalmente não precisa mudar.
+                storage:
+                  type: object
+                  properties:
+                    size:
+                      type: string
+                      description: Tamanho do volume do histórico (ex. 1Gi).
+                    storageClassName:
+                      type: string
+                      description: Storage class do volume. Vazio usa a padrão do cluster.
+                route:
+                  type: object
+                  properties:
+                    host:
+                      type: string
+                      description: Endereço da rota. Vazio deixa o OpenShift gerar.
+                consoleLink:
+                  type: object
+                  description: Atalho no menu de aplicações do console (ícone de grade no topo).
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Cria o atalho. Padrão true.
+                    section:
+                      type: string
+                      description: Título do grupo no menu. Padrão "Autoscaling Insights".
+                    text:
+                      type: string
+                      description: Texto do item. Vazio usa o título do painel.
+                resources:
+                  type: object
+                  description: Requests e limits dos containers dashboard e oauthProxy.
+                  x-kubernetes-preserve-unknown-fields: true
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true

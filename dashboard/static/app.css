@@ -1,0 +1,189 @@
+/* Ajustes do VPA Insights sobre o PatternFly 6.
+   Usa os tokens do PatternFly (--pf-t--...) para seguir o tema claro/escuro do console. */
+
+:root {
+  --vpa-gap: var(--pf-t--global--spacer--md, 16px);
+  --vpa-text: var(--pf-t--global--text--color--regular, #151515);
+  --vpa-subtle: var(--pf-t--global--text--color--subtle, #4d4d4d);
+  --vpa-border: var(--pf-t--global--border--color--default, #c7c7c7);
+  --vpa-surface: var(--pf-t--global--background--color--primary--default, #ffffff);
+  --vpa-surface-2: var(--pf-t--global--background--color--secondary--default, #f2f2f2);
+  --vpa-ok: var(--pf-t--global--color--status--success--default, #3d7317);
+  --vpa-warn: var(--pf-t--global--color--status--warning--default, #dca614);
+  --vpa-bad: var(--pf-t--global--color--status--danger--default, #b1380b);
+  --vpa-info: var(--pf-t--global--color--status--info--default, #5e40be);
+  --vpa-radius: var(--pf-t--global--border--radius--small, 6px);
+  --vpa-sm: var(--pf-t--global--font--size--sm, 0.875rem);
+  --vpa-xs: var(--pf-t--global--font--size--xs, 0.75rem);
+  /* Séries dos gráficos (paleta validada para daltonismo). Laranja e vermelho ficam
+     reservados para as linhas do VPA e do limit. */
+  --vpa-s1: #2a78d6; --vpa-s2: #1baf7a; --vpa-s3: #008300; --vpa-s4: #4a3aa7; --vpa-s5: #e87ba4; --vpa-s6: #eda100;
+  --vpa-vpa: #eb6834; --vpa-limit: #e34948; --vpa-request: #6a6e73;
+}
+.pf-v6-theme-dark {
+  --vpa-s1: #3987e5; --vpa-s2: #199e70; --vpa-s3: #2f9e2f; --vpa-s4: #9085e9; --vpa-s5: #d55181; --vpa-s6: #c98500;
+  --vpa-vpa: #f0834f; --vpa-limit: #e66767; --vpa-request: #a3a3a3;
+}
+
+.ico { width: 1em; height: 1em; fill: currentColor; vertical-align: -0.125em; flex: none; }
+
+/* ---------- masthead ---------- */
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+.brand:hover { text-decoration: none; }
+#logo { height: 32px; width: auto; max-width: 160px; object-fit: contain; }
+#logo[hidden] { display: none; }
+.pf-v6-theme-dark #logo { background: #fff; border-radius: 4px; padding: 3px 5px; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+.brand-name { font-family: var(--pf-t--global--font--family--heading, "Red Hat Display", sans-serif); font-weight: 600; font-size: 1.125rem; }
+.brand-sub { font-size: var(--vpa-xs); color: var(--vpa-subtle); }
+.masthead-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.user-menu { display: inline-flex; align-items: center; gap: 8px; font-size: var(--vpa-sm); }
+.user-menu[hidden] { display: none; }
+
+/* ---------- cabeçalho da página ---------- */
+.page-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+.page-desc { color: var(--vpa-subtle); margin: 4px 0 0; font-size: var(--vpa-sm); max-width: 760px; }
+.page-head-right { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.updated { font-size: var(--vpa-xs); color: var(--vpa-subtle); }
+.selectors { display: flex; flex-wrap: wrap; gap: 12px; margin-top: var(--vpa-gap); align-items: flex-end; }
+.selectors[hidden] { display: none; }
+.sel { display: flex; flex-direction: column; gap: 4px; min-width: 180px; }
+.sel.grow { flex: 1 1 280px; }
+.sel-label { font-size: var(--vpa-sm); font-weight: 600; }
+#errors:not(:empty) { margin-top: var(--vpa-gap); }
+
+/* ---------- conteúdo ---------- */
+.tab[hidden] { display: none; }
+.pf-v6-c-page__main-body > .pf-v6-c-card,
+.pf-v6-c-page__main-body > .grid-2,
+.pf-v6-c-page__main-body > #dBanner:not(:empty),
+.pf-v6-c-page__main-body > #pBanner:not(:empty) { margin-bottom: var(--vpa-gap); }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: var(--vpa-gap); }
+.card-desc { color: var(--vpa-subtle); font-size: var(--vpa-sm); margin: 0 0 12px; }
+.chart { position: relative; height: 270px; }
+.table-wrap { overflow-x: auto; }
+.pf-v6-c-alert + .pf-v6-c-alert { margin-top: 8px; }
+
+/* cards de indicadores */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--vpa-gap); margin-bottom: var(--vpa-gap); }
+.stat { background: var(--vpa-surface); border: 1px solid var(--vpa-border); border-radius: var(--pf-t--global--border--radius--medium, 12px); padding: 16px; min-width: 0; }
+.stat-label { font-size: var(--vpa-sm); color: var(--vpa-subtle); }
+.stat-value { font-family: var(--pf-t--global--font--family--heading, "Red Hat Display", sans-serif); font-size: 1.5rem; font-weight: 500; margin-top: 4px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat-hint { font-size: var(--vpa-xs); color: var(--vpa-subtle); margin-top: 4px; }
+
+/* tabelas */
+.pf-v6-c-table td.num, .pf-v6-c-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pf-v6-c-table td, .pf-v6-c-table th { white-space: nowrap; vertical-align: top; }
+.pf-v6-c-table tr.pf-m-clickable { cursor: pointer; }
+.pf-v6-c-table tr.pf-m-selected > td { background: var(--pf-t--global--background--color--primary--clicked, rgba(0, 102, 204, .08)); }
+.sub { display: block; font-size: var(--vpa-xs); color: var(--vpa-subtle); }
+.strong { font-weight: 600; }
+.t-ok { color: var(--vpa-ok); } .t-warn { color: var(--pf-t--global--text--color--status--warning--default, #8a6100); } .t-bad { color: var(--pf-t--global--text--color--status--danger--default, #b1380b); }
+.labels { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.pf-v6-c-table td.wrap { white-space: normal; min-width: 280px; }
+#hBody[hidden] { display: none; }
+
+/* barra de ocupação */
+.meter { position: relative; height: 6px; background: var(--vpa-surface-2); border-radius: 3px; margin-top: 4px; min-width: 90px; overflow: hidden; }
+.meter > span { position: absolute; inset: 0 auto 0 0; border-radius: 3px; }
+
+/* listas de definição na ajuda e no estado do VPA */
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0 0 12px; font-size: var(--vpa-sm); }
+.kv dt { color: var(--vpa-subtle); }
+.kv dd { margin: 0; }
+.help dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; }
+.help dt { font-weight: 600; }
+.help dd { margin: 0; }
+.help p, .help dl { max-width: 900px; }
+
+/* blocos de comando */
+.cmd + .cmd { margin-top: 12px; }
+.cmd-title { font-size: var(--vpa-sm); font-weight: 600; margin-bottom: 6px; }
+.pf-v6-c-code-block__pre { white-space: pre; overflow-x: auto; }
+
+@media (max-width: 768px) {
+  .sel { min-width: 0; flex: 1 1 100%; }
+  .help dl, .kv { grid-template-columns: 1fr; }
+}
+
+/* ---------- aviso "Importante" ---------- */
+.sidebar-version { font-size: var(--vpa-xs); color: var(--vpa-subtle); margin: 16px 16px 0; font-variant-numeric: tabular-nums; }
+.sidebar-version[hidden] { display: none; }
+.sidebar-note { font-size: var(--vpa-xs); color: var(--vpa-subtle); margin: 16px 16px 8px; line-height: 1.4; }
+.notice-alert { margin-bottom: var(--vpa-gap); }
+.notice h2 { margin-top: 20px; }
+.notice h2:first-child { margin-top: 0; }
+.notice p, .notice ul { max-width: 900px; }
+.notice-foot { margin-top: 24px; font-style: italic; color: var(--vpa-subtle); }
+
+/* seletor de janela de tempo */
+.range-wrap { display: inline-flex; align-items: center; gap: 8px; }
+.range-wrap[hidden] { display: none; }
+.range-label { font-size: var(--vpa-sm); color: var(--vpa-subtle); }
+
+/* Lista aberta dos seletores (Projeto, Deployment, Container). No Windows e no Linux o
+   navegador desenha a lista com as cores do sistema: sem isto, no tema escuro o texto
+   herdava o branco do PatternFly sobre o fundo branco do sistema e as opções sumiam. */
+:root { color-scheme: light; }
+:root.pf-v6-theme-dark { color-scheme: dark; }
+select option,
+select optgroup {
+  background-color: var(--vpa-surface);
+  color: var(--vpa-text);
+}
+select option:disabled { color: var(--vpa-subtle); }
+select option:checked {
+  background-color: var(--pf-t--global--color--brand--default, #0066cc);
+  color: #fff;
+}
+
+/* ---------- dicas (?) nos títulos dos cards ---------- */
+.help-tip { display: inline-flex; align-items: center; justify-content: center; margin-left: 6px; padding: 2px; border: 0; background: none;
+  color: var(--vpa-subtle); cursor: help; vertical-align: middle; border-radius: 50%; font-size: 0.875rem; line-height: 1; }
+.help-tip:hover, .help-tip:focus-visible { color: var(--pf-t--global--color--brand--default, #0066cc); }
+.help-tip:focus-visible { outline: 2px solid var(--pf-t--global--color--brand--default, #0066cc); outline-offset: 1px; }
+.help-pop { position: absolute; z-index: 1000; padding: 8px 12px; border-radius: var(--vpa-radius);
+  background: var(--pf-t--global--background--color--inverse--default, #1f1f1f); color: var(--pf-t--global--text--color--inverse, #fff);
+  font-size: var(--vpa-sm); line-height: 1.45; box-shadow: 0 4px 12px rgba(0, 0, 0, .25); pointer-events: none; }
+.help-pop[hidden] { display: none; }
+.pf-v6-theme-dark .help-pop { background: #f0f0f0; color: #151515; }
+
+/* ícone girando de "Loading metrics" */
+.ico.spin { animation: vpa-spin 1s linear infinite; transform-origin: 50% 50%; }
+@keyframes vpa-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ico.spin { animation: none; } }
+
+.report-btn { white-space: nowrap; }
+.report-btn .ico { width: 14px; height: 14px; }
+
+/* ---------- Export report (janela de opções) ---------- */
+.rm-backdrop { position: fixed; inset: 0; z-index: 900; }
+.rm-backdrop[hidden] { display: none; }
+body.rm-open { overflow: hidden; }
+.rm-box { width: min(860px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
+.rm-row { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: flex-end; margin-bottom: 16px; }
+.rm-field { display: flex; flex-direction: column; gap: 6px; min-width: 160px; }
+.rm-label { font-weight: 600; font-size: var(--vpa-sm); padding: 0; margin-bottom: 6px; }
+.rm-count { font-weight: 400; color: var(--vpa-subtle); margin-left: 6px; }
+.rm-switch { display: flex; gap: 10px; align-items: flex-start; max-width: 460px; cursor: pointer; }
+.rm-switch input { margin-top: 3px; width: 16px; height: 16px; }
+.rm-switch small { color: var(--vpa-subtle); }
+.rm-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .rm-cols { grid-template-columns: 1fr; } }
+.rm-pick, .rm-sections { border: 1px solid var(--vpa-border); border-radius: var(--vpa-radius); padding: 10px 12px 12px; margin: 0; min-width: 0; }
+.rm-tools { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.rm-search { flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid var(--vpa-border); border-radius: var(--vpa-radius);
+  background: var(--vpa-surface); color: var(--vpa-text); font: inherit; font-size: var(--vpa-sm); }
+.rm-list { max-height: 230px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.rm-item { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: var(--vpa-sm); }
+.rm-item:hover { background: var(--vpa-surface-2); }
+.rm-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rm-item small { color: var(--vpa-subtle); font-size: var(--vpa-xs); white-space: nowrap; }
+.rm-group { margin: 8px 6px 2px; font-size: var(--vpa-xs); font-weight: 600; color: var(--vpa-subtle); text-transform: uppercase; letter-spacing: .04em; }
+.rm-group:first-child { margin-top: 0; }
+.rm-empty { color: var(--vpa-subtle); font-size: var(--vpa-sm); margin: 8px 6px; }
+.rm-sections { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.rm-sections legend { width: 100%; }
+.rm-sections label { display: inline-flex; gap: 6px; align-items: center; font-size: var(--vpa-sm); cursor: pointer; }
+.rm-error { margin: 12px 0 0; color: var(--vpa-bad); font-size: var(--vpa-sm); }
+.rm-error[hidden] { display: none; }
