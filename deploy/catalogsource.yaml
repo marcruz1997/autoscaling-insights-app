@@ -1,0 +1,17 @@
+# Registra o catálogo no cluster. Depois disso, o operator aparece no OperatorHub.
+# Gerado pelo build.sh em deploy/catalogsource.yaml.
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: autoscaling-insights-catalog
+  namespace: openshift-marketplace
+spec:
+  sourceType: grpc
+  image: quay.io/marcruz/autoscaling-insights-catalog:latest
+  displayName: Autoscaling Insights (não oficial)
+  publisher: "KubeTech Lab"
+  grpcPodConfig:
+    securityContextConfig: restricted
+  updateStrategy:
+    registryPoll:
+      interval: 30m      # verifica novas versões a cada 30 minutos

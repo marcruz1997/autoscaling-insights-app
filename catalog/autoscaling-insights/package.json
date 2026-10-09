@@ -1,0 +1,10 @@
+{
+  "schema": "olm.package",
+  "name": "autoscaling-insights",
+  "defaultChannel": "stable",
+  "description": "Painel de VPA e HPA para OpenShift. Ferramenta não oficial, sem suporte da Red Hat.",
+  "icon": {
+    "base64data": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTIiIGZpbGw9IiMwZjFiMmQiLz48cmVjdCB4PSIxMCIgeT0iMTIiIHdpZHRoPSIxNCIgaGVpZ2h0PSI0MCIgcng9IjMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2E4YjNjMiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjMgMyIvPjxyZWN0IHg9IjEyLjUiIHk9IjI2IiB3aWR0aD0iOSIgaGVpZ2h0PSIyMy41IiByeD0iMiIgZmlsbD0iIzJhNzhkNiIvPjxsaW5lIHgxPSI3IiB5MT0iMjYiIHgyPSIyNyIgeTI9IjI2IiBzdHJva2U9IiNlYjY4MzQiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHJlY3QgeD0iMzEiIHk9IjM0IiB3aWR0aD0iNiIgaGVpZ2h0PSIxNiIgcng9IjEuNSIgZmlsbD0iIzJhNzhkNiIvPjxyZWN0IHg9IjM5LjUiIHk9IjM0IiB3aWR0aD0iNiIgaGVpZ2h0PSIxNiIgcng9IjEuNSIgZmlsbD0iIzJhNzhkNiIvPjxyZWN0IHg9IjQ4IiB5PSIzNCIgd2lkdGg9IjYiIGhlaWdodD0iMTYiIHJ4PSIxLjUiIGZpbGw9IiM2ZGE3ZWMiLz48bGluZSB4MT0iOCIgeTE9IjUyIiB4Mj0iNTYiIHkyPSI1MiIgc3Ryb2tlPSIjYThiM2MyIiBzdHJva2Utd2lkdGg9IjEuNSIvPjwvc3ZnPgo=",
+    "mediatype": "image/svg+xml"
+  }
+}

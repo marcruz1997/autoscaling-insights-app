@@ -1,0 +1,10 @@
+{
+  "schema": "olm.channel",
+  "package": "autoscaling-insights",
+  "name": "stable",
+  "entries": [
+    {
+      "name": "autoscaling-insights.v1.0.0"
+    }
+  ]
+}
